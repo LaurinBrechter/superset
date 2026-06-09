@@ -73,6 +73,11 @@ module.exports = {
             shippedProposals: true,
             modules: 'auto',
             targets: { node: 'current' },
+            include: [
+              '@babel/plugin-transform-class-static-block',
+              '@babel/plugin-transform-export-namespace-from',
+              '@babel/plugin-transform-modules-commonjs',
+            ],
           },
         ],
         [
@@ -84,11 +89,7 @@ module.exports = {
         ],
         '@babel/preset-typescript',
       ],
-      plugins: [
-        'babel-plugin-dynamic-import-node',
-        '@babel/plugin-transform-modules-commonjs',
-        '@babel/plugin-transform-export-namespace-from',
-      ],
+      plugins: ['babel-plugin-dynamic-import-node'],
     },
     // build instrumented code for testing code coverage with Cypress
     instrumented: {
