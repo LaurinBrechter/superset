@@ -16,37 +16,28 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-import winston from 'winston';
 
-interface LoggingOptionsType {
-  silent: boolean;
-  logLevel: string;
-  logToFile: boolean;
-  logFilename: string;
-}
-
-export function createLogger(opts: LoggingOptionsType) {
-  const logTransports: Array<winston.transport> = [
-    new winston.transports.Console({ handleExceptions: true }),
-  ];
-
-  if (opts.logToFile && opts.logFilename) {
-    logTransports.push(
-      new winston.transports.File({
-        filename: opts.logFilename,
-        handleExceptions: true,
-      }),
-    );
+/**
+ * Rejects if `promise` does not settle within `ms` milliseconds. A non-positive
+ * `ms` disables the timeout and returns the promise unchanged. The timer is
+ * always cleared so it cannot keep the event loop alive.
+ */
+export function withTimeout<T>(
+  promise: Promise<T>,
+  ms: number,
+  label: string,
+): Promise<T> {
+  if (!ms || ms <= 0) {
+    return promise;
   }
-
-  return winston.createLogger({
-    level: opts.logLevel,
-    transports: logTransports,
-    format: winston.format.combine(
-      winston.format.timestamp(),
-      winston.format.errors({ stack: true }),
-      winston.format.json(),
-    ),
-    silent: opts.silent,
+  let timer: ReturnType<typeof setTimeout>;
+  const timeout = new Promise<never>((_resolve, reject) => {
+    timer = setTimeout(
+      () => reject(new Error(`${label} did not resolve within ${ms}ms`)),
+      ms,
+    );
   });
+  return Promise.race([promise, timeout]).finally(() =>
+    clearTimeout(timer),
+  ) as Promise<T>;
 }

@@ -16,37 +16,24 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-import winston from 'winston';
 
-interface LoggingOptionsType {
-  silent: boolean;
-  logLevel: string;
-  logToFile: boolean;
-  logFilename: string;
-}
+import { withTimeout } from "./withTimeout";
 
-export function createLogger(opts: LoggingOptionsType) {
-  const logTransports: Array<winston.transport> = [
-    new winston.transports.Console({ handleExceptions: true }),
-  ];
+test("resolves with the value when the promise settles in time", async () => {
+  await expect(withTimeout(Promise.resolve("ok"), 1000, "fetch")).resolves.toBe(
+    "ok"
+  );
+});
 
-  if (opts.logToFile && opts.logFilename) {
-    logTransports.push(
-      new winston.transports.File({
-        filename: opts.logFilename,
-        handleExceptions: true,
-      }),
-    );
-  }
+test("rejects when the promise does not settle within the timeout", async () => {
+  const never = new Promise<string>(() => {});
+  await expect(withTimeout(never, 10, "fetch")).rejects.toThrow(
+    /fetch did not resolve within 10ms/
+  );
+});
 
-  return winston.createLogger({
-    level: opts.logLevel,
-    transports: logTransports,
-    format: winston.format.combine(
-      winston.format.timestamp(),
-      winston.format.errors({ stack: true }),
-      winston.format.json(),
-    ),
-    silent: opts.silent,
-  });
-}
+test("passes the promise through unchanged when the timeout is disabled", async () => {
+  await expect(withTimeout(Promise.resolve("ok"), 0, "fetch")).resolves.toBe(
+    "ok"
+  );
+});
